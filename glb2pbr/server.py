@@ -25,6 +25,7 @@ from typing import Optional
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from .pipeline import run
 
@@ -33,8 +34,10 @@ STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 os.makedirs(JOBS_ROOT, exist_ok=True)
 
 app = FastAPI(title="glb2pbr", version="0.1.0")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 _jobs: dict[str, dict] = {}
 _lock = threading.Lock()
+
 
 
 def _job_dir(job_id: str) -> str:

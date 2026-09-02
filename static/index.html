@@ -16,61 +16,201 @@
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 var(--font)}
   a{color:inherit}
-  main{max-width:1180px;margin:0 auto;padding:40px 24px 80px}
-  h1{font-size:44px;line-height:1.02;letter-spacing:-.02em;margin:0 0 6px;font-weight:700}
-  h1 small{display:block;font-size:17px;font-weight:400;color:var(--mute);letter-spacing:0;margin-top:10px;max-width:60ch}
-  .grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:40px;margin-top:36px}
-  @media (max-width:840px){.grid{grid-template-columns:1fr}}
+  main{max-width:1200px;margin:0 auto;padding:36px 24px 80px}
+  h1{font-size:40px;line-height:1.05;letter-spacing:-.02em;margin:0 0 6px;font-weight:700}
+  h1 small{display:block;font-size:16px;font-weight:400;color:var(--mute);letter-spacing:0;margin-top:8px;max-width:65ch}
+  .grid{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:36px;margin-top:32px}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}}
 
-  /* drop zone: the one bold element */
-  .drop{position:relative;aspect-ratio:1/1;border:2px dashed var(--ink);display:flex;flex-direction:column;
+  /* drop zone */
+  .drop{position:relative;aspect-ratio:1/0.95;border:2px dashed var(--ink);display:flex;flex-direction:column;
         align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;
-        transition:background .15s,border-color .15s}
+        transition:background .15s,border-color .15s;border-radius:6px}
   .drop:hover,.drop.over{background:color-mix(in srgb,var(--wire) 12%,var(--paper))}
   .drop:focus-visible{outline:3px solid var(--wire);outline-offset:3px}
-  .drop svg{width:120px;height:120px;margin-bottom:14px}
-  .drop b{font-size:18px}
+  .drop svg{width:100px;height:100px;margin-bottom:12px}
+  .drop b{font-size:17px}
   .drop span{color:var(--mute);font-size:13px;margin-top:6px}
   .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
 
-  fieldset{border:0;padding:0;margin:22px 0 0}
+  fieldset{border:0;padding:0;margin:20px 0 0}
   .opt{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--rule)}
   .opt:last-child{border-bottom:1px solid var(--rule)}
   .opt label{font-size:14px}
   .opt em{display:block;font-style:normal;color:var(--mute);font-size:12px}
   .opt select,.opt input[type=number]{font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);
-        background:var(--paper);color:var(--ink);width:110px}
+        background:var(--paper);color:var(--ink);width:110px;border-radius:4px}
   .opt input[type=checkbox]{width:18px;height:18px;accent-color:var(--ink)}
 
   button.go{margin-top:18px;width:100%;padding:14px;font:inherit;font-size:16px;font-weight:700;background:var(--ink);
-        color:var(--paper);border:0;cursor:pointer}
+        color:var(--paper);border:0;cursor:pointer;border-radius:6px;transition:opacity .15s}
   button.go:disabled{opacity:.35;cursor:default}
   button.go:focus-visible{outline:3px solid var(--wire);outline-offset:3px}
 
-  /* results */
-  .status{min-height:24px;color:var(--mute);font-size:14px}
+  /* results & viewport */
+  .status{min-height:24px;color:var(--mute);font-size:14px;margin-top:0}
   .status.err{color:#c62b2b}
-  .log{font-size:12px;color:var(--mute);white-space:pre-wrap;margin:8px 0 0;max-height:140px;overflow:auto}
-  .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px;margin-top:18px}
-  .map{display:block;text-decoration:none}
+  .log{font-size:12px;color:var(--mute);white-space:pre-wrap;margin:8px 0 0;max-height:120px;overflow:auto;background:color-mix(in srgb,var(--ink) 4%,var(--paper));padding:8px 12px;border-radius:4px}
+
+  /* 3D WebGL Viewport */
+  .viewport-wrap{
+    position:relative;
+    width:100%;
+    height:420px;
+    background:radial-gradient(circle at 50% 40%, #20242e 0%, #0c0e14 100%);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    overflow:hidden;
+    margin:14px 0 24px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.18);
+    display:flex;
+    flex-direction:column;
+  }
+  .viewport-toolbar{
+    position:absolute;
+    top:10px;
+    left:10px;
+    right:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    z-index:10;
+    pointer-events:none;
+    gap:8px;
+  }
+  .viewport-toolbar > *{pointer-events:auto}
+  .btn-group{
+    display:flex;
+    background:rgba(18,20,26,0.8);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .tb-btn{
+    background:transparent;
+    color:#ccc;
+    border:0;
+    padding:6px 12px;
+    font:inherit;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all .15s ease;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .tb-btn:hover:not(:disabled){background:rgba(255,255,255,0.12);color:#fff}
+  .tb-btn.active{background:var(--wire);color:#000;font-weight:700}
+  .tb-btn:disabled{opacity:.35;cursor:not-allowed}
+  .channel-select-wrap select{
+    background:rgba(18,20,26,0.8);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,0.12);
+    color:#eee;
+    font:inherit;
+    padding:6px 10px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+    outline:none;
+  }
+  .channel-select-wrap select:focus{border-color:var(--wire)}
+  .canvas-container{
+    flex:1;
+    width:100%;
+    height:100%;
+    position:relative;
+    outline:none;
+  }
+  .canvas-container canvas{
+    width:100%!important;
+    height:100%!important;
+    display:block;
+  }
+  .viewport-badge{
+    position:absolute;
+    bottom:12px;
+    left:14px;
+    background:rgba(0,0,0,0.55);
+    backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,0.1);
+    color:#bbb;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:4px;
+    pointer-events:none;
+    letter-spacing:0.02em;
+  }
+  .viewport-hint{
+    position:absolute;
+    bottom:12px;
+    right:14px;
+    color:rgba(255,255,255,0.45);
+    font-size:11px;
+    pointer-events:none;
+  }
+
+  .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px 12px;margin-top:18px}
+  .map{display:block;text-decoration:none;border-radius:4px;overflow:hidden;border:1px solid transparent;transition:border-color .15s}
+  .map:hover{border-color:var(--wire)}
   .map img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#000;display:block}
   .map figcaption{font-size:12px;margin-top:6px}
   .map figcaption i{font-style:normal;color:var(--mute);display:block}
-  .actions{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;font-size:14px}
+  .actions{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:22px;font-size:14px}
   .actions a{font-weight:700}
-  .next{margin-top:34px;border-top:1px solid var(--rule);padding-top:18px;font-size:14px;max-width:70ch}
-  .next h2{font-size:15px;margin:0 0 8px}
-  .next ol{margin:0;padding-left:20px}
-  .next li{margin:6px 0}
+  .next{margin-top:36px;border-top:1px solid var(--rule);padding-top:22px;font-size:14px}
+  .next h2{font-size:18px;margin:0 0 16px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .rebuild-cards{display:flex;flex-direction:column;gap:14px}
+  .rebuild-card{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:color-mix(in srgb,var(--ink) 2%,var(--paper))}
+  .rebuild-card summary{
+    padding:14px 18px;font-weight:600;font-size:15px;cursor:pointer;user-select:none;
+    background:color-mix(in srgb,var(--ink) 5%,var(--paper));display:flex;align-items:center;justify-content:space-between;
+  }
+  .rebuild-card summary:hover{background:color-mix(in srgb,var(--ink) 8%,var(--paper))}
+  .rebuild-card summary::-webkit-details-marker{display:none}
+  .rebuild-card[open] summary{border-bottom:1px solid var(--rule)}
+  .rebuild-content{padding:18px 20px;font-size:14px;line-height:1.6}
+  .rebuild-content ol{margin:0 0 12px 0;padding-left:22px}
+  .rebuild-content li{margin:8px 0}
+  .rebuild-content p{margin:8px 0}
+  .code-block{
+    position:relative;background:#0d0e14;color:#e6edf3;border-radius:6px;
+    padding:12px 14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+    overflow-x:auto;margin:10px 0;border:1px solid rgba(255,255,255,0.08);line-height:1.45;
+  }
+  .code-copy-btn{
+    position:absolute;top:7px;right:7px;background:rgba(255,255,255,0.12);color:#ccc;
+    border:0;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:inherit;
+    transition:background .15s,color .15s;
+  }
+  .code-copy-btn:hover{background:var(--wire);color:#000}
+  .tip-box{
+    margin-top:12px;padding:10px 14px;background:color-mix(in srgb,var(--wire) 12%,var(--paper));
+    border-left:3px solid var(--wire);border-radius:0 4px 4px 0;font-size:13px;
+  }
   code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:color-mix(in srgb,var(--ink) 7%,var(--paper));padding:1px 5px}
   .empty{color:var(--mute);max-width:52ch}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/static/vendor/three.module.min.js",
+    "three/addons/controls/OrbitControls.js": "/static/vendor/OrbitControls.js",
+    "three/addons/loaders/GLTFLoader.js": "/static/vendor/GLTFLoader.js",
+    "three/addons/environments/RoomEnvironment.js": "/static/vendor/RoomEnvironment.js"
+  }
+}
+</script>
 </head>
 <body>
 <main>
   <h1>Unwrap a textured GLB into PBR maps
-    <small>Drop a .glb or .gltf. You get every Principled BSDF / Substance channel as a PNG, the UV layout, an OBJ for Designer's 3D view, and the scripts that rebuild the material in Blender and Substance Designer.</small>
+    <small>Drop a .glb or .gltf. You get every Principled BSDF / Substance channel as a PNG, real-time 3D WebGL preview of the orb, UV layout, an OBJ mesh, and scripts to rebuild the material in Blender and Substance Designer.</small>
   </h1>
 
   <div class="grid">
@@ -108,46 +248,386 @@
     <section id="results">
       <p class="status" id="status"></p>
       <pre class="log" id="log" hidden></pre>
-      <p class="empty" id="empty">Nothing extracted yet. Everything runs on this machine; results land in the <code>jobs/</code> folder next to the server.</p>
+
+      <!-- 3D WebGL Viewport -->
+      <div class="viewport-wrap" id="viewportWrap">
+        <div class="viewport-toolbar">
+          <div class="btn-group">
+            <button class="tb-btn active" id="btnModeOrb" type="button" title="Preview on 3D PBR Material Orb">🔮 Orb</button>
+            <button class="tb-btn" id="btnModeMesh" type="button" title="Preview uploaded 3D Mesh" disabled>📦 Mesh</button>
+          </div>
+          <div class="channel-select-wrap">
+            <select id="channelSelect" title="Channel Isolation">
+              <option value="pbr">Full PBR Shading</option>
+              <option value="basecolor">Base Color</option>
+              <option value="roughness">Roughness</option>
+              <option value="metallic">Metallic</option>
+              <option value="normal_gl">Normal (GL)</option>
+              <option value="ao">Ambient Occlusion</option>
+              <option value="height">Height</option>
+              <option value="emissive">Emissive</option>
+            </select>
+          </div>
+          <div class="btn-group">
+            <button class="tb-btn active" id="btnRotate" type="button" title="Toggle Auto-Rotation">⟳ Spin</button>
+            <button class="tb-btn" id="btnWire" type="button" title="Toggle Wireframe">⬡ Wire</button>
+            <button class="tb-btn" id="btnResetCam" type="button" title="Reset Camera View">⊙ Reset</button>
+          </div>
+        </div>
+        <div class="canvas-container" id="canvasContainer"></div>
+        <div class="viewport-badge" id="viewportBadge">PBR Material Orb</div>
+        <div class="viewport-hint">Drag to rotate · Scroll to zoom · Right-click to pan</div>
+      </div>
+
+      <p class="empty" id="empty">Nothing extracted yet. Everything runs locally; results land in the <code>jobs/</code> folder next to the server.</p>
       <div class="maps" id="maps"></div>
       <div class="actions" id="actions" hidden></div>
       <div class="next" id="next" hidden>
-        <h2>Rebuild it</h2>
-        <ol>
-          <li>Blender: <code>blender --python blender_build_material.py -- --manifest manifest.json --glb model.glb</code></li>
-          <li>Designer (headless, needs SAT/pysbs): <code>python substance_build_sbs_pysbs.py manifest.json --n2h</code></li>
-          <li>Designer (in app): Windows → Python Editor → open <code>substance_build_sbs_designer.py</code>, set MANIFEST, run.</li>
-        </ol>
+        <h2>Rebuild Instructions</h2>
+        <div class="rebuild-cards">
+          <!-- 1. Blender -->
+          <details class="rebuild-card" open>
+            <summary>
+              <span><strong>1. Blender</strong> — Rebuild Principled BSDF Material</span>
+              <span style="font-size:12px;color:var(--mute)">Interactive &amp; Headless ▾</span>
+            </summary>
+            <div class="rebuild-content">
+              <p>Automatically wires all extracted maps (Base Color, Metallic, Roughness, Normal Map, Specular, Transmission, Clearcoat, Sheen, Emissive) to Blender's Principled BSDF shader with correct color space settings (sRGB for color, Non-Color for data).</p>
+
+              <h4 style="margin:14px 0 6px;font-size:14px">Interactive (Inside Blender GUI):</h4>
+              <ol>
+                <li>Launch Blender (3.6+ or 4.x/5.x).</li>
+                <li>Switch to the <strong>Scripting</strong> workspace tab in the top header.</li>
+                <li>Click <strong>Open</strong> and choose <code>blender_build_material.py</code> (included in your extracted ZIP / output directory).</li>
+                <li>Set <code>MANIFEST = "manifest.json"</code> (or your full path to <code>manifest.json</code>) near line 32.</li>
+                <li>Click <strong>Run Script</strong> (▶) or press <code>Alt+P</code>.</li>
+                <li>Switch the 3D Viewport shading mode to <strong>Material Preview</strong> (<code>Z &gt; 2</code>) to view the fully wired model!</li>
+              </ol>
+
+              <h4 style="margin:14px 0 6px;font-size:14px">Headless (Terminal / CLI):</h4>
+              <div class="code-block">
+                <code>blender --python blender_build_material.py -- --manifest manifest.json --glb model.glb --save model_shaded.blend</code>
+                <button class="code-copy-btn" onclick="copyCmd(this, 'blender --python blender_build_material.py -- --manifest manifest.json --glb model.glb --save model_shaded.blend')">Copy</button>
+              </div>
+              <div class="tip-box">
+                <strong>Helpful Flags:</strong><br>
+                • <code>--displacement</code> : Connects the 16-bit Height map to a Displacement node for microdisplacement in Cycles.<br>
+                • <code>--ao-multiply</code> : Multiplies the AO map directly into Base Color for extra cavity occlusion.<br>
+                • Omit <code>--glb</code> to build the material directly onto an inspection UV sphere.
+              </div>
+            </div>
+          </details>
+
+          <!-- 2. Substance Designer Headless (pysbs) -->
+          <details class="rebuild-card" open>
+            <summary>
+              <span><strong>2. Substance Designer</strong> (Headless via SAT / pysbs)</span>
+              <span style="font-size:12px;color:var(--mute)">Batch .sbs package ▾</span>
+            </summary>
+            <div class="rebuild-content">
+              <p>Headlessly compiles a native <code>.sbs</code> Substance Designer package containing a complete graph with linked bitmap inputs and standard output nodes (baseColor, metallic, roughness, normal, AO, height, emissive, opacity, scattering, sheen, coat), linking the OBJ mesh as a 3D scene resource.</p>
+
+              <h4 style="margin:14px 0 6px;font-size:14px">Prerequisites:</h4>
+              <p>Requires the <code>pysbs</code> Python module from the Adobe Substance Automation Toolkit (SAT):</p>
+              <div class="code-block">
+                <code>pip install "&lt;SAT_PATH&gt;/Python API/Pysbs-*.whl"</code>
+                <button class="code-copy-btn" onclick="copyCmd(this, 'pip install &quot;<SAT_PATH>/Python API/Pysbs-*.whl&quot;')">Copy</button>
+              </div>
+
+              <h4 style="margin:14px 0 6px;font-size:14px">Batch CLI Command:</h4>
+              <div class="code-block">
+                <code>python substance_build_sbs_pysbs.py manifest.json -o out.sbs --n2h</code>
+                <button class="code-copy-btn" onclick="copyCmd(this, 'python substance_build_sbs_pysbs.py manifest.json -o out.sbs --n2h')">Copy</button>
+              </div>
+              <div class="tip-box">
+                <strong>Flags &amp; Options:</strong><br>
+                • <code>--n2h</code> : Uses Designer's built-in <em>Normal to Height HQ</em> node instead of the baked FFT height map (recommended for clean, artifact-free micro-details).<br>
+                • <code>--normal gl|dx</code> : Selects OpenGL (+Y) or DirectX (-Y) normal map convention.<br>
+                • <code>-o &lt;file.sbs&gt;</code> : Output file path (defaults to <code>&lt;model&gt;_pbr.sbs</code>).
+              </div>
+            </div>
+          </details>
+
+          <!-- 3. Substance Designer In-App -->
+          <details class="rebuild-card" open>
+            <summary>
+              <span><strong>3. Substance Designer</strong> (In-App Python Editor)</span>
+              <span style="font-size:12px;color:var(--mute)">Live in Designer UI ▾</span>
+            </summary>
+            <div class="rebuild-content">
+              <p>Runs directly inside an active Substance 3D Designer window, generating a new package in your workspace with your material graph and hooking up the 3D viewport.</p>
+
+              <h4 style="margin:14px 0 6px;font-size:14px">Step-by-Step Instructions:</h4>
+              <ol>
+                <li>Open <strong>Adobe Substance 3D Designer</strong>.</li>
+                <li>Go to <strong>Windows → Python Editor</strong> (or click the Python console button in the top toolbar).</li>
+                <li>Open <code>substance_build_sbs_designer.py</code> in the Python Editor (or paste the script contents).</li>
+                <li>Check line 36: ensure <code>MANIFEST = "/path/to/manifest.json"</code> has the full path to your <code>manifest.json</code>.</li>
+                <li>Click the green <strong>Run</strong> button (or press <code>Ctrl+Enter</code> / <code>Cmd+Enter</code>).</li>
+                <li>A new package will appear in the <strong>Explorer</strong> panel with the <code>&lt;Material&gt;_pbr</code> graph and linked bitmap resources.</li>
+                <li><strong>View in 3D Viewport:</strong>
+                  <br>• In Explorer, right-click the imported OBJ scene resource → <strong>Show in 3D View</strong>.
+                  <br>• Right-click the graph → <strong>View outputs in 3D View</strong>.
+                </li>
+              </ol>
+              <div class="tip-box">
+                <strong>Normal Convention Tip:</strong> If shading looks inverted in Designer's 3D view, check <em>Materials → Default → Edit → Normal Format</em> (switch between OpenGL and DirectX), or set <code>NORMAL_CONVENTION = "dx"</code> in the script.
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
     </section>
   </div>
 </main>
 
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+window.copyCmd = (btn, text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 1800);
+  });
+};
+
 (() => {
   const $ = id => document.getElementById(id);
   const drop = $('drop'), input = $('file'), go = $('go'), status = $('status'), log = $('log'),
-        maps = $('maps'), actions = $('actions'), empty = $('empty'), next = $('next'), label = $('dropLabel');
-  let file = null, timer = null;
+        maps = $('maps'), actions = $('actions'), empty = $('empty'), next = $('next'), label = $('dropLabel'),
+        canvasContainer = $('canvasContainer'), viewportBadge = $('viewportBadge'),
+        btnModeOrb = $('btnModeOrb'), btnModeMesh = $('btnModeMesh'),
+        btnRotate = $('btnRotate'), btnWire = $('btnWire'), btnResetCam = $('btnResetCam'),
+        channelSelect = $('channelSelect');
 
+  let file = null, timer = null;
+  let autoRotate = true;
+  let currentMode = 'orb'; // 'orb' | 'mesh'
+  let loadedTextures = {};
+
+  // ------------------------------------------------------------- 3D Scene Setup
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  canvasContainer.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0.4, 3.4);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 1.2;
+  controls.maxDistance = 10;
+
+  // Studio lighting environment
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  pmremGenerator.compileEquirectangularShader();
+  const roomEnv = new RoomEnvironment();
+  scene.environment = pmremGenerator.fromScene(roomEnv, 0.04).texture;
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+  keyLight.position.set(5, 8, 6);
+  scene.add(keyLight);
+
+  const fillLight = new THREE.DirectionalLight(0x88bbff, 0.6);
+  fillLight.position.set(-5, -2, -4);
+  scene.add(fillLight);
+
+  const ambLight = new THREE.AmbientLight(0xffffff, 0.45);
+  scene.add(ambLight);
+
+  // ------------------------------------------------------------- PBR Orb Setup
+  const orbGroup = new THREE.Group();
+  scene.add(orbGroup);
+
+  // High-res Sphere with proper UV layout and tangents
+  const sphereGeo = new THREE.SphereGeometry(1.0, 96, 48);
+  sphereGeo.setAttribute('uv2', sphereGeo.attributes.uv);
+
+  const orbMaterial = new THREE.MeshStandardMaterial({
+    color: 0x9fa8b8,
+    metalness: 0.85,
+    roughness: 0.22,
+    envMapIntensity: 1.0,
+  });
+
+  const orbMesh = new THREE.Mesh(sphereGeo, orbMaterial);
+  orbGroup.add(orbMesh);
+
+  // Subtle floor shadow disc under orb
+  const shadowGeo = new THREE.CircleGeometry(1.2, 48);
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.25,
+    depthWrite: false
+  });
+  const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+  shadowMesh.rotation.x = -Math.PI / 2;
+  shadowMesh.position.y = -1.02;
+  orbGroup.add(shadowMesh);
+
+  // Wireframe helper
+  const wireGeo = new THREE.WireframeGeometry(sphereGeo);
+  const wireMat = new THREE.LineBasicMaterial({ color: 0x00dcff, transparent: true, opacity: 0.35 });
+  const wireLines = new THREE.LineSegments(wireGeo, wireMat);
+  wireLines.visible = false;
+  orbMesh.add(wireLines);
+
+  // ------------------------------------------------------------- Uploaded Mesh Setup
+  const meshGroup = new THREE.Group();
+  meshGroup.visible = false;
+  scene.add(meshGroup);
+
+  const gltfLoader = new GLTFLoader();
+  const textureLoader = new THREE.TextureLoader();
+
+  // Resize handler
+  function handleResize() {
+    const width = canvasContainer.clientWidth;
+    const height = canvasContainer.clientHeight;
+    if (width === 0 || height === 0) return;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height, false);
+  }
+  const resizeObserver = new ResizeObserver(handleResize);
+  resizeObserver.observe(canvasContainer);
+  handleResize();
+
+  // Animation loop
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    if (autoRotate) {
+      if (currentMode === 'orb') orbGroup.rotation.y += 0.007;
+      else meshGroup.rotation.y += 0.007;
+    }
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // ------------------------------------------------------------- UI Viewport Controls
+  btnModeOrb.addEventListener('click', () => {
+    currentMode = 'orb';
+    orbGroup.visible = true;
+    meshGroup.visible = false;
+    btnModeOrb.classList.add('active');
+    btnModeMesh.classList.remove('active');
+    viewportBadge.textContent = 'PBR Material Orb';
+  });
+
+  btnModeMesh.addEventListener('click', () => {
+    if (meshGroup.children.length === 0) return;
+    currentMode = 'mesh';
+    orbGroup.visible = false;
+    meshGroup.visible = true;
+    btnModeMesh.classList.add('active');
+    btnModeOrb.classList.remove('active');
+    viewportBadge.textContent = file ? file.name : '3D Mesh';
+  });
+
+  btnRotate.addEventListener('click', () => {
+    autoRotate = !autoRotate;
+    btnRotate.classList.toggle('active', autoRotate);
+  });
+
+  btnWire.addEventListener('click', () => {
+    wireLines.visible = !wireLines.visible;
+    btnWire.classList.toggle('active', wireLines.visible);
+  });
+
+  btnResetCam.addEventListener('click', () => {
+    camera.position.set(0, 0.4, 3.4);
+    controls.target.set(0, 0, 0);
+    orbGroup.rotation.set(0, 0, 0);
+    meshGroup.rotation.set(0, 0, 0);
+    controls.update();
+  });
+
+  // Channel isolation handler
+  channelSelect.addEventListener('change', () => {
+    const ch = channelSelect.value;
+    if (ch === 'pbr') {
+      orbMesh.material = orbMaterial;
+      return;
+    }
+    const tex = loadedTextures[ch];
+    if (tex) {
+      orbMesh.material = new THREE.MeshBasicMaterial({ map: tex });
+    } else {
+      // Channel map not available yet
+      orbMesh.material = orbMaterial;
+    }
+  });
+
+  // ------------------------------------------------------------- File Selection & Parsing
   const pick = f => {
     if (!f) return;
-    if (!/\.(glb|gltf)$/i.test(f.name)) { status.textContent = 'That is not a .glb or .gltf file.'; status.classList.add('err'); return; }
-    file = f; status.classList.remove('err'); status.textContent = '';
+    if (!/\.(glb|gltf)$/i.test(f.name)) {
+      status.textContent = 'That is not a .glb or .gltf file.';
+      status.classList.add('err');
+      return;
+    }
+    file = f;
+    status.classList.remove('err');
+    status.textContent = '';
     label.textContent = `${f.name} · ${(f.size/1048576).toFixed(1)} MB`;
     go.disabled = false;
+
+    // Parse uploaded 3D file for immediate WebGL preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      gltfLoader.parse(e.target.result, '', gltf => {
+        while (meshGroup.children.length > 0) {
+          meshGroup.remove(meshGroup.children[0]);
+        }
+        meshGroup.add(gltf.scene);
+
+        // Normalize scale and center
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const s = maxDim > 0 ? 2.0 / maxDim : 1;
+        gltf.scene.scale.setScalar(s);
+        gltf.scene.position.set(-center.x * s, -center.y * s, -center.z * s);
+
+        btnModeMesh.disabled = false;
+        viewportBadge.textContent = `${f.name} loaded`;
+      }, err => {
+        console.warn('GLTF preview parse warning:', err);
+      });
+    };
+    reader.readAsArrayBuffer(f);
   };
+
   input.addEventListener('change', () => pick(input.files[0]));
   ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
   ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
   drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
 
+  // ------------------------------------------------------------- Extraction Runner
   go.addEventListener('click', async () => {
     if (!file) return;
-    go.disabled = true; maps.innerHTML = ''; actions.hidden = true; next.hidden = true; empty.hidden = true;
-    log.hidden = false; log.textContent = ''; status.classList.remove('err');
+    go.disabled = true;
+    maps.innerHTML = '';
+    actions.hidden = true;
+    next.hidden = true;
+    empty.hidden = true;
+    log.hidden = false;
+    log.textContent = '';
+    status.classList.remove('err');
     status.textContent = `Uploading ${file.name}…`;
+
     const fd = new FormData();
     fd.append('file', file);
     if ($('size').value) fd.append('size', $('size').value);
@@ -156,12 +636,18 @@
     fd.append('sss_tint', $('tint').value);
     fd.append('height', $('height').checked);
     fd.append('curvature', $('curv').checked);
+
     let job;
     try {
       const r = await fetch('/api/extract', { method: 'POST', body: fd });
       if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
       job = (await r.json()).job;
-    } catch (e) { status.textContent = `Upload failed: ${e.message}`; status.classList.add('err'); go.disabled = false; return; }
+    } catch (e) {
+      status.textContent = `Upload failed: ${e.message}`;
+      status.classList.add('err');
+      go.disabled = false;
+      return;
+    }
     status.textContent = 'Extracting…';
     timer = setInterval(() => poll(job), 1200);
   });
@@ -171,32 +657,97 @@
     log.textContent = j.log.join('\n');
     log.scrollTop = log.scrollHeight;
     if (j.status === 'running' || j.status === 'queued') return;
-    clearInterval(timer); go.disabled = false;
-    if (j.status === 'error') { status.textContent = `Extraction failed: ${j.error}`; status.classList.add('err'); return; }
+    clearInterval(timer);
+    go.disabled = false;
+    if (j.status === 'error') {
+      status.textContent = `Extraction failed: ${j.error}`;
+      status.classList.add('err');
+      return;
+    }
     render(job, j.manifest);
   }
 
+  // ------------------------------------------------------------- Results & WebGL PBR Binding
   function render(job, m) {
     const mats = m.materials;
     const nMaps = mats.reduce((n, mt) => n + Object.keys(mt.maps).length, 0);
     status.textContent = `Done in ${m.timing_s}s — ${mats.length} material${mats.length === 1 ? '' : 's'}, ${nMaps} maps @ ${mats[0]?.size || '?'}px, generator ${m.source.generator || 'unknown'}.`;
     const base = `/api/jobs/${job}/files/`;
+
+    // Populate 2D gallery
     for (const mt of mats) {
       const items = Object.entries(mt.maps).map(([id, rec]) => [id, rec.file, `${rec.colorspace} · ${rec.channels}${rec.bits === 16 ? ' 16-bit' : ''}`]);
-      for (const [k, f] of Object.entries((mt.uv && mt.uv.files) || {})) items.push([`uv ${k}`, f, mt.uv.coverage ? `${(mt.uv.coverage*100).toFixed(0)}% coverage` : '']);
+      for (const [k, f] of Object.entries((mt.uv && mt.uv.files) || {})) {
+        items.push([`uv ${k}`, f, mt.uv.coverage ? `${(mt.uv.coverage*100).toFixed(0)}% coverage` : '']);
+      }
       for (const [id, f, meta] of items) {
         const thumb = (m.thumbnails && m.thumbnails.per_file[f]) || f;
         const fig = document.createElement('a');
-        fig.className = 'map'; fig.href = base + f; fig.target = '_blank';
+        fig.className = 'map';
+        fig.href = base + f;
+        fig.target = '_blank';
         fig.innerHTML = `<figure style="margin:0"><img loading="lazy" src="${base + thumb}" alt="${id}"><figcaption>${mats.length > 1 ? mt.safe_name + ' · ' : ''}${id}<i>${meta}</i></figcaption></figure>`;
         maps.appendChild(fig);
       }
     }
+
     actions.innerHTML = `<a href="/api/jobs/${job}/zip">Download ZIP (maps + mesh + scripts)</a>` +
       (m.mesh ? `<a href="/api/jobs/${job}/zip?include_mesh=false">ZIP without mesh</a>` : '') +
       `<a href="${base}manifest.json" target="_blank">manifest.json</a>` +
       (mats[0]?.warnings?.length ? `<span>${mats[0].warnings.join(' ')}</span>` : '');
-    actions.hidden = false; next.hidden = false;
+    actions.hidden = false;
+    next.hidden = false;
+
+    // Dynamically wire extracted maps into the 3D WebGL PBR Orb
+    const primaryMat = mats[0];
+    if (primaryMat && primaryMat.maps) {
+      const pMaps = primaryMat.maps;
+      loadedTextures = {};
+
+      const loadTex = (key, srgb = false) => {
+        if (!pMaps[key]) return;
+        textureLoader.load(base + pMaps[key].file, t => {
+          t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+          t.wrapS = THREE.RepeatWrapping;
+          t.wrapT = THREE.RepeatWrapping;
+          loadedTextures[key] = t;
+
+          if (key === 'basecolor') {
+            orbMaterial.map = t;
+            orbMaterial.color.setHex(0xffffff);
+          } else if (key === 'normal_gl') {
+            orbMaterial.normalMap = t;
+            orbMaterial.normalScale.set(1, 1);
+          } else if (key === 'roughness') {
+            orbMaterial.roughnessMap = t;
+            orbMaterial.roughness = 1.0;
+          } else if (key === 'metallic') {
+            orbMaterial.metalnessMap = t;
+            orbMaterial.metalness = 1.0;
+          } else if (key === 'ao') {
+            orbMaterial.aoMap = t;
+            orbMaterial.aoMapIntensity = 1.0;
+          } else if (key === 'emissive') {
+            orbMaterial.emissiveMap = t;
+            orbMaterial.emissive.setHex(0xffffff);
+          } else if (key === 'height') {
+            loadedTextures['height'] = t;
+          }
+          orbMaterial.needsUpdate = true;
+        });
+      };
+
+      loadTex('basecolor', true);
+      loadTex('normal_gl', false);
+      loadTex('roughness', false);
+      loadTex('metallic', false);
+      loadTex('ao', false);
+      loadTex('emissive', true);
+      loadTex('height', false);
+
+      viewportBadge.textContent = `PBR Orb: ${primaryMat.name}`;
+      btnModeOrb.click();
+    }
   }
 })();
 </script>
