@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>glb2pbr — unwrap a textured GLB into PBR maps</title>
+<style>
+  :root{
+    --ink:#111; --paper:#fff; --mute:#6b6b6b; --rule:#d9d9d9;
+    --wire:#00dcff; --flesh:#e8a39a; --chrome:#8a8a8a;
+    --font:"Helvetica Neue",Helvetica,Arial,"Liberation Sans",sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --ink:#f2f2f2; --paper:#141414; --mute:#9a9a9a; --rule:#333; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 var(--font)}
+  a{color:inherit}
+  main{max-width:1180px;margin:0 auto;padding:40px 24px 80px}
+  h1{font-size:44px;line-height:1.02;letter-spacing:-.02em;margin:0 0 6px;font-weight:700}
+  h1 small{display:block;font-size:17px;font-weight:400;color:var(--mute);letter-spacing:0;margin-top:10px;max-width:60ch}
+  .grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:40px;margin-top:36px}
+  @media (max-width:840px){.grid{grid-template-columns:1fr}}
+
+  /* drop zone: the one bold element */
+  .drop{position:relative;aspect-ratio:1/1;border:2px dashed var(--ink);display:flex;flex-direction:column;
+        align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;
+        transition:background .15s,border-color .15s}
+  .drop:hover,.drop.over{background:color-mix(in srgb,var(--wire) 12%,var(--paper))}
+  .drop:focus-visible{outline:3px solid var(--wire);outline-offset:3px}
+  .drop svg{width:120px;height:120px;margin-bottom:14px}
+  .drop b{font-size:18px}
+  .drop span{color:var(--mute);font-size:13px;margin-top:6px}
+  .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+  fieldset{border:0;padding:0;margin:22px 0 0}
+  .opt{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--rule)}
+  .opt:last-child{border-bottom:1px solid var(--rule)}
+  .opt label{font-size:14px}
+  .opt em{display:block;font-style:normal;color:var(--mute);font-size:12px}
+  .opt select,.opt input[type=number]{font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--rule);
+        background:var(--paper);color:var(--ink);width:110px}
+  .opt input[type=checkbox]{width:18px;height:18px;accent-color:var(--ink)}
+
+  button.go{margin-top:18px;width:100%;padding:14px;font:inherit;font-size:16px;font-weight:700;background:var(--ink);
+        color:var(--paper);border:0;cursor:pointer}
+  button.go:disabled{opacity:.35;cursor:default}
+  button.go:focus-visible{outline:3px solid var(--wire);outline-offset:3px}
+
+  /* results */
+  .status{min-height:24px;color:var(--mute);font-size:14px}
+  .status.err{color:#c62b2b}
+  .log{font-size:12px;color:var(--mute);white-space:pre-wrap;margin:8px 0 0;max-height:140px;overflow:auto}
+  .maps{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 12px;margin-top:18px}
+  .map{display:block;text-decoration:none}
+  .map img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#000;display:block}
+  .map figcaption{font-size:12px;margin-top:6px}
+  .map figcaption i{font-style:normal;color:var(--mute);display:block}
+  .actions{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;font-size:14px}
+  .actions a{font-weight:700}
+  .next{margin-top:34px;border-top:1px solid var(--rule);padding-top:18px;font-size:14px;max-width:70ch}
+  .next h2{font-size:15px;margin:0 0 8px}
+  .next ol{margin:0;padding-left:20px}
+  .next li{margin:6px 0}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:color-mix(in srgb,var(--ink) 7%,var(--paper));padding:1px 5px}
+  .empty{color:var(--mute);max-width:52ch}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Unwrap a textured GLB into PBR maps
+    <small>Drop a .glb or .gltf. You get every Principled BSDF / Substance channel as a PNG, the UV layout, an OBJ for Designer's 3D view, and the scripts that rebuild the material in Blender and Substance Designer.</small>
+  </h1>
+
+  <div class="grid">
+    <section>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose a GLB or glTF file">
+        <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="42" cy="60" r="30"/>
+          <path d="M12 60c0-16.6 13.4-30 30-30M42 90c-16.6 0-30-13.4-30-30" stroke-dasharray="3 4"/>
+          <path d="M78 46h30v28H78zM78 46l12-10h30l-12 10M108 46l12-10v28l-12 10" />
+          <path d="M84 52l6 6-6 6M96 52l6 6-6 6" stroke="var(--wire)"/>
+        </svg>
+        <b id="dropLabel">Drop a .glb / .gltf here</b>
+        <span>or click to choose · Meshy, Blender, Painter exports all work</span>
+        <input type="file" id="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json">
+      </div>
+
+      <fieldset>
+        <div class="opt"><label for="size">Map size<em>blank = largest source texture</em></label>
+          <input type="number" id="size" min="256" max="8192" step="256" placeholder="auto"></div>
+        <div class="opt"><label for="mesh">Mesh export<em>OBJ lets Designer's 3D view show the real unwrap</em></label>
+          <select id="mesh"><option value="obj">OBJ (V flipped)</option><option value="copy">copy GLB</option><option value="none">none</option></select></div>
+        <div class="opt"><label for="sss">Subsurface gain<em>weight = (1 − metallic) × gain</em></label>
+          <input type="number" id="sss" min="0" max="2" step="0.05" value="1"></div>
+        <div class="opt"><label for="tint">Subsurface radius tint<em>0 = Blender default (1, .2, .1), 1 = base colour</em></label>
+          <input type="number" id="tint" min="0" max="1" step="0.05" value="0.75"></div>
+        <div class="opt"><label for="height">Height from normal<em>16-bit, FFT-integrated, masked to UV islands</em></label>
+          <input type="checkbox" id="height" checked></div>
+        <div class="opt"><label for="curv">Curvature map<em>handy as a mask input in Designer</em></label>
+          <input type="checkbox" id="curv"></div>
+      </fieldset>
+
+      <button class="go" id="go" disabled>Extract maps</button>
+    </section>
+
+    <section id="results">
+      <p class="status" id="status"></p>
+      <pre class="log" id="log" hidden></pre>
+      <p class="empty" id="empty">Nothing extracted yet. Everything runs on this machine; results land in the <code>jobs/</code> folder next to the server.</p>
+      <div class="maps" id="maps"></div>
+      <div class="actions" id="actions" hidden></div>
+      <div class="next" id="next" hidden>
+        <h2>Rebuild it</h2>
+        <ol>
+          <li>Blender: <code>blender --python blender_build_material.py -- --manifest manifest.json --glb model.glb</code></li>
+          <li>Designer (headless, needs SAT/pysbs): <code>python substance_build_sbs_pysbs.py manifest.json --n2h</code></li>
+          <li>Designer (in app): Windows → Python Editor → open <code>substance_build_sbs_designer.py</code>, set MANIFEST, run.</li>
+        </ol>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const drop = $('drop'), input = $('file'), go = $('go'), status = $('status'), log = $('log'),
+        maps = $('maps'), actions = $('actions'), empty = $('empty'), next = $('next'), label = $('dropLabel');
+  let file = null, timer = null;
+
+  const pick = f => {
+    if (!f) return;
+    if (!/\.(glb|gltf)$/i.test(f.name)) { status.textContent = 'That is not a .glb or .gltf file.'; status.classList.add('err'); return; }
+    file = f; status.classList.remove('err'); status.textContent = '';
+    label.textContent = `${f.name} · ${(f.size/1048576).toFixed(1)} MB`;
+    go.disabled = false;
+  };
+  input.addEventListener('change', () => pick(input.files[0]));
+  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
+  drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+
+  go.addEventListener('click', async () => {
+    if (!file) return;
+    go.disabled = true; maps.innerHTML = ''; actions.hidden = true; next.hidden = true; empty.hidden = true;
+    log.hidden = false; log.textContent = ''; status.classList.remove('err');
+    status.textContent = `Uploading ${file.name}…`;
+    const fd = new FormData();
+    fd.append('file', file);
+    if ($('size').value) fd.append('size', $('size').value);
+    fd.append('mesh', $('mesh').value);
+    fd.append('sss_gain', $('sss').value);
+    fd.append('sss_tint', $('tint').value);
+    fd.append('height', $('height').checked);
+    fd.append('curvature', $('curv').checked);
+    let job;
+    try {
+      const r = await fetch('/api/extract', { method: 'POST', body: fd });
+      if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+      job = (await r.json()).job;
+    } catch (e) { status.textContent = `Upload failed: ${e.message}`; status.classList.add('err'); go.disabled = false; return; }
+    status.textContent = 'Extracting…';
+    timer = setInterval(() => poll(job), 1200);
+  });
+
+  async function poll(job) {
+    const j = await (await fetch(`/api/jobs/${job}`)).json();
+    log.textContent = j.log.join('\n');
+    log.scrollTop = log.scrollHeight;
+    if (j.status === 'running' || j.status === 'queued') return;
+    clearInterval(timer); go.disabled = false;
+    if (j.status === 'error') { status.textContent = `Extraction failed: ${j.error}`; status.classList.add('err'); return; }
+    render(job, j.manifest);
+  }
+
+  function render(job, m) {
+    const mats = m.materials;
+    const nMaps = mats.reduce((n, mt) => n + Object.keys(mt.maps).length, 0);
+    status.textContent = `Done in ${m.timing_s}s — ${mats.length} material${mats.length === 1 ? '' : 's'}, ${nMaps} maps @ ${mats[0]?.size || '?'}px, generator ${m.source.generator || 'unknown'}.`;
+    const base = `/api/jobs/${job}/files/`;
+    for (const mt of mats) {
+      const items = Object.entries(mt.maps).map(([id, rec]) => [id, rec.file, `${rec.colorspace} · ${rec.channels}${rec.bits === 16 ? ' 16-bit' : ''}`]);
+      for (const [k, f] of Object.entries((mt.uv && mt.uv.files) || {})) items.push([`uv ${k}`, f, mt.uv.coverage ? `${(mt.uv.coverage*100).toFixed(0)}% coverage` : '']);
+      for (const [id, f, meta] of items) {
+        const thumb = (m.thumbnails && m.thumbnails.per_file[f]) || f;
+        const fig = document.createElement('a');
+        fig.className = 'map'; fig.href = base + f; fig.target = '_blank';
+        fig.innerHTML = `<figure style="margin:0"><img loading="lazy" src="${base + thumb}" alt="${id}"><figcaption>${mats.length > 1 ? mt.safe_name + ' · ' : ''}${id}<i>${meta}</i></figcaption></figure>`;
+        maps.appendChild(fig);
+      }
+    }
+    actions.innerHTML = `<a href="/api/jobs/${job}/zip">Download ZIP (maps + mesh + scripts)</a>` +
+      (m.mesh ? `<a href="/api/jobs/${job}/zip?include_mesh=false">ZIP without mesh</a>` : '') +
+      `<a href="${base}manifest.json" target="_blank">manifest.json</a>` +
+      (mats[0]?.warnings?.length ? `<span>${mats[0].warnings.join(' ')}</span>` : '');
+    actions.hidden = false; next.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>

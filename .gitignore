@@ -1,0 +1,13 @@
+.venv/
+jobs/
+__pycache__/
+*.pyc
+tests/fixture_sphere.*
+*_pbr/
+.DS_Store
+*/.DS_Store
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
