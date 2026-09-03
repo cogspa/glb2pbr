@@ -24,14 +24,17 @@
 
   /* drop zone */
   .drop{position:relative;aspect-ratio:1/0.95;border:2px dashed var(--ink);display:flex;flex-direction:column;
-        align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;
-        transition:background .15s,border-color .15s;border-radius:6px}
+        align-items:center;justify-content:center;text-align:center;padding:20px 16px;cursor:pointer;
+        transition:background .15s,border-color .15s;border-radius:6px;overflow:hidden}
   .drop:hover,.drop.over{background:color-mix(in srgb,var(--wire) 12%,var(--paper))}
   .drop:focus-visible{outline:3px solid var(--wire);outline-offset:3px}
-  .drop svg{width:100px;height:100px;margin-bottom:12px}
-  .drop b{font-size:17px}
+  .drop svg{width:88px;height:88px;margin-bottom:10px;flex-shrink:0}
+  .drop b{font-size:15px;line-height:1.35;max-width:100%;word-break:break-word;overflow-wrap:anywhere;display:block}
+  .drop b span{display:block;overflow-wrap:anywhere;word-break:break-word}
+  .drop small.size-badge{display:block;font-size:13px;color:var(--mute);font-weight:400;margin-top:4px}
   .drop span{color:var(--mute);font-size:13px;margin-top:6px}
   .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
 
   fieldset{border:0;padding:0;margin:20px 0 0}
   .opt{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--rule)}
@@ -579,34 +582,41 @@ window.copyCmd = (btn, text) => {
     file = f;
     status.classList.remove('err');
     status.textContent = '';
-    label.textContent = `${f.name} · ${(f.size/1048576).toFixed(1)} MB`;
+    label.innerHTML = `<span>${f.name}</span><small class="size-badge">${(f.size/1048576).toFixed(1)} MB</small>`;
     go.disabled = false;
 
-    // Parse uploaded 3D file for immediate WebGL preview
-    const reader = new FileReader();
-    reader.onload = e => {
-      gltfLoader.parse(e.target.result, '', gltf => {
-        while (meshGroup.children.length > 0) {
-          meshGroup.remove(meshGroup.children[0]);
-        }
-        meshGroup.add(gltf.scene);
+    // Parse uploaded 3D file for immediate WebGL preview (if under 60MB)
+    if (f.size < 60 * 1024 * 1024) {
+      viewportBadge.textContent = `Loading ${f.name}…`;
+      const reader = new FileReader();
+      reader.onload = e => {
+        gltfLoader.parse(e.target.result, '', gltf => {
+          while (meshGroup.children.length > 0) {
+            meshGroup.remove(meshGroup.children[0]);
+          }
+          meshGroup.add(gltf.scene);
 
-        // Normalize scale and center
-        const box = new THREE.Box3().setFromObject(gltf.scene);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const s = maxDim > 0 ? 2.0 / maxDim : 1;
-        gltf.scene.scale.setScalar(s);
-        gltf.scene.position.set(-center.x * s, -center.y * s, -center.z * s);
+          // Normalize scale and center
+          const box = new THREE.Box3().setFromObject(gltf.scene);
+          const size = box.getSize(new THREE.Vector3());
+          const center = box.getCenter(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const s = maxDim > 0 ? 2.0 / maxDim : 1;
+          gltf.scene.scale.setScalar(s);
+          gltf.scene.position.set(-center.x * s, -center.y * s, -center.z * s);
 
-        btnModeMesh.disabled = false;
-        viewportBadge.textContent = `${f.name} loaded`;
-      }, err => {
-        console.warn('GLTF preview parse warning:', err);
-      });
-    };
-    reader.readAsArrayBuffer(f);
+          btnModeMesh.disabled = false;
+          viewportBadge.textContent = `${f.name} loaded`;
+        }, err => {
+          console.warn('GLTF preview parse warning:', err);
+          viewportBadge.textContent = 'PBR Material Orb';
+        });
+      };
+      reader.readAsArrayBuffer(f);
+    } else {
+      viewportBadge.textContent = 'PBR Material Orb (large mesh ready)';
+      btnModeMesh.disabled = true;
+    }
   };
 
   input.addEventListener('change', () => pick(input.files[0]));
@@ -749,6 +759,28 @@ window.copyCmd = (btn, text) => {
       btnModeOrb.click();
     }
   }
+
+  // Auto-load latest completed extraction on page load
+  fetch('/api/jobs')
+    .then(r => r.json())
+    .then(jobs => {
+      const latest = jobs.find(j => j.status === 'done');
+      if (latest) {
+        fetch(`/api/jobs/${latest.id}`)
+          .then(r => r.json())
+          .then(fullJob => {
+            if (fullJob.manifest) {
+              empty.hidden = true;
+              render(fullJob.id, fullJob.manifest);
+              if (fullJob.log && fullJob.log.length > 0) {
+                log.hidden = false;
+                log.textContent = fullJob.log.join('\n');
+              }
+            }
+          });
+      }
+    })
+    .catch(() => {});
 })();
 </script>
 </body>

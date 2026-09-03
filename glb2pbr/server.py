@@ -75,7 +75,9 @@ def _run_job(job_id: str, input_path: str, out_dir: str, params: dict):
 @app.get("/", response_class=HTMLResponse)
 def index():
     with open(os.path.join(STATIC_DIR, "index.html"), "r", encoding="utf-8") as fh:
-        return fh.read()
+        content = fh.read()
+    return HTMLResponse(content, headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
 
 
 @app.post("/api/extract")
@@ -114,7 +116,15 @@ async def extract(
 
 @app.get("/api/jobs")
 def list_jobs():
-    return [{k: v for k, v in j.items() if k != "manifest"} for j in sorted(_jobs.values(), key=lambda j: j["created"], reverse=True)]
+    for entry in os.listdir(JOBS_ROOT):
+        jp = os.path.join(JOBS_ROOT, entry, "job.json")
+        if entry not in _jobs and os.path.isfile(jp):
+            try:
+                with open(jp, "r", encoding="utf-8") as fh:
+                    _jobs[entry] = json.load(fh)
+            except Exception:
+                pass
+    return [{k: v for k, v in j.items() if k != "manifest"} for j in sorted(_jobs.values(), key=lambda j: j.get("created", 0), reverse=True)]
 
 
 @app.get("/api/jobs/{job_id}")
@@ -126,6 +136,7 @@ def get_job(job_id: str):
             job = json.load(fh)
         _jobs[job_id] = job
     return JSONResponse(job)
+
 
 
 @app.get("/api/jobs/{job_id}/files/{path:path}")
