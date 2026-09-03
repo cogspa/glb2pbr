@@ -10,4 +10,6 @@ tests/fixture_sphere.*
 *.egg-info/
 dist/
 build/
+repomix-output.*
+
 
